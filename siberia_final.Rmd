@@ -1,0 +1,706 @@
+---
+title: "Morphosyntactic complexities in (North-Eastern) Siberia: evidence for contact-induced
+  convergence?"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+knitr:: opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+library(tidyverse) 
+library(dplyr)
+library(purrr)
+library(lingtypology)
+library(foreign)
+library(ggplot2)
+library(MASS)
+library(Hmisc)
+library(reshape2)
+library(MultBiplotR)
+library(ordinal)
+library(broom)
+library(factoextra)
+library(cluster)
+library(pvclust)
+library(ape)
+library(ggmap)
+library(lme4)
+```
+
+
+
+
+## 0. Intro
+
+The data for this project were collected by A. Vinyar (denominal verbaizers) and D. Ignatenko (attenuatives) as part of a joint project dedicated to the areal typology of Siberia together with T. Kazakova, A. Nogina, A. Baklanov, and I. Stenin.
+Our study is devoted to areal linguistic patterns of North-Eastern Siberia and possible (pre)historic contact situations underlying them. Here, I will consider 2 morpho-syntactic variables on the sample of 69 languages, covering all 9 language families which at least partially enter Siberia. I will compare it with 120-language variety sample covering the world to check that this clustering is not well-attributed to chance resemblance, genealogical inheritance and/or general functional-typological selection and indeed bear a contact explanation (or not).
+
+While ‘classic’ typological studies in linguistics looks for and provides explanations hierarchies, patterns and implications that govern linguistic variation («selectional causes»), areal typology is interested in «event-driven causes» (see Bickel 2015): how grammatical diversity is shaped by historical accidents leading to convergence, divergence inheritance and contact scenarios. Such contact effects are lesser studied for Siberia, although previous researchers have pointed out some cases of areal convergence crossing the borders of well-established geneological units, see Anderson (2017), Packendorf (2020), Gusev (2020). 
+
+**Siberia as a linguistic area**
+
+* Enormous, but rather well geographically defined (Ural mountains on the West, Rivers/Platos on the South, Oceans on the North and East)
+* Extremely low population/language density
+  + Also moderate genealogical density at least previously in Chukotka, Kamchatka, Lower Amur/Sakhalin regions
+  + Despite this - high mobility of transport reindeer herding groups (Samoyeds, (Northern) Tungus, Chukotian - to lesser degree - Yukaghir and South Siberian Turks…)
+* Huge families: Turkic, Tungusic, Mongolian (Trans-Eurasian?), Uralic
+* Small families: Yeniseic, Yukaghir, Nivkh, Ainu, Chukotko-Kamchatkan
+* Super-spread families (sometimes crossing (macro)areal borded): Uralic, Turkic, Tungusic, Eskimo-Aleut
+* Several profound areal case studies
+  + Altaic/Transeurasian as Sprachbund or macrofamily (Robeets 2020)
+  + Chukchi-Eskimo contact phenomena (see de Reuse 1994, Golovko and Vakhtin materials)
+  + Contact phenomena in Turkic/Tungusic (e.g. Pakendorf 2020) and Chukchi (e.g. Pupynina & Aralova 2021)
+  + Anderson (2003; 2006; 2017) Northeastern Siberia as linguistic area
+  + Evidence for substrate effects in North-Eastern Siberia (see Gusev et al. 2019; Gusev 2020)?
+  + Evidence for ancient contact: Anikin & Helimski (2007) for Proto-Tungusic-Samoyedic, Fortescue (1998) for putative Eskimo-Chukchi-Yukaghir-Uralic as a ‘mash’
+  + …
+
+**Event-driven VS selection-driven distributions**
+
+Following Bickel (2015) and others
+* Selection/function-driven causes
+  + Shape languages independently of accidents of history but via principles of communication/cognition/social structure(?)/cultural mechanisms (??)
+* Event-driven causes
+  + Shape languages via historical accidents: proto-language (non) split, language extinction, contact effects
+
+
+**Our study: Event-driven distributions in North-Eastern Siberia**
+
+* Not ‘defining area’ but ‘defining features that might be areal’
+  + See discussions that even well-defined ‘linguistic areas’ are problematic as a concept (Campbell et al. 1986 for Mesoamerica; Campbell 2006 in general; Nichols 2017 for a note on Caucasus)
+* Discover event-driven (genealogical and/or areal bias) as contrasted to selection-driven (‘functional motivations’) distributions (see recent works of Nichols and/or Bickel)
+
+```
+Hypotheses of the study
+
+(1)
+H0: Наличие в языке аффиксальных глаголов (или некоторых их подтипов) не является ареальной чертой северо-восточной евразии
+H1: Наличие в языке аффиксальных глаголов (или некоторых их подтипов) является ареальной чертой северо-восточной евразии
+
+(2)
+H0: Наличие в языке аттенуативов не является ареальной чертой северо-восточной евразии
+H1: Наличие в языке аттенуативов является ареальной чертой северо-восточной евразии
+```
+
+## 1. Data
+
+### 1.1. Sampling procedure for areality
+
+**Two samples to check areal effects:**
+
+1) "Siberia and the closest neigbours" sample
+
+Procedure (inspired by Bickel 2015):
+* Sample all families from Siberia
+* From these families, sample languages outside Siberia, too
+* Sample 1 language for lowest-level genus (only one of sisters) according to Glottolog
+* Choose language according to available descriptive materials' size+date
+* Consult for materials and analyses with ‘experts’ and fieldworkers on genera (Chukotko-Kamchatkan, Samoyedic, Turkic, Tungusic)
+
+69 lgs (-5 source prblms), 9 families, + Russian, Japanese, Mandarin Chinese, Korean & Hokkaido Ainu as neighbours 
+
+
+Hard problem: how to choose between areal, genealogical and/or general preference factors in play?
+
+=>
+
+2) Worldwide sample
+* Goal - select 20 languages from each macroarea (according to Glottolog) (independence)
+* Every token - from different families/isolates (according to Glottolog) (independence)
+* Select languages with most recent descriptions (convenience)
+* If competing languages - the one with the longest description is selected (convenience)
+* If possible - the most geographically remote languages are selected (independence)
+
+120 languages, 100 families
+
+
+```{r}
+#affixal verbs
+world_vbz <- read_csv2("/Users/ignatenkodarja/Desktop/ma_compling/DataAn/final_project/worldwide_vbz.csv")
+sib_vbz <- read_csv2("/Users/ignatenkodarja/Desktop/ma_compling/DataAn/final_project/siberia_vbz.csv")
+
+
+#attenuatives
+world_atten <- read_csv("/Users/ignatenkodarja/Desktop/ma_compling/DataAn/final_project/atten_world.csv")
+sib_atten <- read_csv("/Users/ignatenkodarja/Desktop/ma_compling/DataAn/final_project/atten_syb.csv")
+```
+
+
+**Preprocessing**
+
+```{r}
+sib_vbz$affixal.verbs <- as.factor(sib_vbz$affixal.verbs)
+sib_vbz$affixal.verbs <- factor(sib_vbz$affixal.verbs, levels = c("no", "single", "low", "medium", "high"))
+sib_vbz[, 9:21][is.na(sib_vbz[, 9:21])] <- 0
+sib_vbz[, 9:21]<- mutate_all(sib_vbz[, 9:21], function(x) as.numeric(as.character(x)))
+
+
+world_vbz$affixal.verbs <- as.factor(world_vbz$affixal.verbs)
+world_vbz$affixal.verbs <- factor(world_vbz$affixal.verbs, levels = c("no", "single", "low", "medium", "high"))
+
+world_atten[, 4][world_atten[, 4] == 'n/a'] <- NA
+```
+
+
+```{r}
+sib <- merge(x = sib_vbz, y = sib_atten, by = "glottocode", all.x = TRUE, suffixes = c("",".y"), no.dups = TRUE)
+drops <- c("family.y", "language.y", "latitude.y", "longitude.y", "is.siberian.y")
+sib <- sib[ , !(names(sib) %in% drops)]
+sib <- sib[!duplicated(sib), ]
+```
+
+```{r}
+world <- merge(x = world_vbz, y = world_atten, by = "glottocode", all.x = TRUE, suffixes = c("",".y"), no.dups = TRUE)
+drops <- c("family.y", "language.y", "latitude.y", "longitude.y", "is.siberian.y")
+world <- world[ , !(names(world) %in% drops)]
+```
+
+```{r}
+world[, 'has.attenuative'] <- sapply(world[, 'has.attenuative'], as.numeric)
+sib[, 'has_attenuative'] <- sapply(sib[, 'has_attenuative'], as.numeric)
+sib$latitude <- lat.lang(sib$language)
+sib$longitude <- long.lang(sib$language)
+world$latitude <- lat.lang(world$language)
+world$longitude <- long.lang(world$language)
+```
+
+
+### 1.2. Affixal verbs overview
+
+Affixal verbs are a subtype of lexical affixes: denominal verbalizers (see Gerdts & Marlett (2008) conveying root-like semantics, which we label as affixal verbs. Instead of denoting abstract meanings which either largely depend on the verbalized noun’s semantics or consist of primitives of event decomposition (like proposed for Inuktitut by Johns (2007)), affixal verbs specify event’s manner or (change of) state, a property of √ROOT in event decomposition studies, see (Harley 2005), (Beavers & Koontz-Garboden 2020) inter alia. Affixal verbs can be primary elements of discourse (see Boye & Harder 2012) because of their status of a single predicative element of a clause.
+
+affixal.verbs: no(0 affixal verbs in a language) vs. single(1) vs. low(2-3) vs. medium(4-6) vs. high(7+)
+```{r}
+map.vbz.sib <- map.feature(languages = sib_vbz$language,
+                 features = sib_vbz$affixal.verbs,
+                 color= "YlOrRd")
+map.vbz.sib
+```
+
+The distribution of affixal verbs in Siberia. The circle colour reflects a rough amount of affixal verbs in a given language, counting only affixal verbs (roughly -- denominal verbalizers with lexical, root-like semantics), excluding 'plain', abstract denominal verbalizers. Amoung languages included in the sample, they are found in the following genealogical stocks (from East to West, from North to South): Eskimo-Aleut; Chukotko-Kamchatkan, Tungusic (except Manchu branch), Hokkaido Ainu, Japanese (single), Old Mongol (< Mongolic), Samoyedic (< Uralic), Russian (specific 'lexicalization').
+
+```{r}
+map.vbz.world <- map.feature(languages = world_vbz$language,
+                 features = world_vbz$affixal.verbs,
+                 color= "YlOrRd")
+map.vbz.world
+```
+
+The distribution of affixal verbs worldwide. The circle colour reflects a rough amount of affixal verbs in a given language, counting only affixal verbs (roughly -- denominal verbalizers with lexical, root-like semantics), excluding 'plain', abstract denominal verbalizers. Selected families where they are present are: Eskimo-Aleut; Chukotko-Kamchatkan; Tungusic; Uralic (Samoyedic only), Salish, Wakashan, Algic, Iroquian; Moseten-Chimane; Cariban; Quechuan. 
+
+### 1.3. Attenuatives overview
+
+Attenuatives are a subtype of verbal diminutives (Tatevosov 2003): specific derivative markers that convey meaning that "the situation is manifested less intensively than normally expected about situation of this type". In some languages, such indicators are integrated into the aspectual system to varying degrees (Ignatenko 2018), but their main function is always evaluative, not aspectual.
+
+```{r}
+map.atten.sib <- map.feature(languages = sib$language,
+                 features = sib$has_attenuative,
+                 color= "YlOrRd")
+map.atten.sib
+```
+The distribution of attenuatives in Siberia. Dark circles stand for the languages, where attenuative markers were attested, lighter circles mark languages, where such markers are absent. We can see two different areas of spread: Uralic family vs. North-Eastern (contact induced?) -- Eskaleut, Chukotko-Kamchatkan, Yukaghir, Tungusic
+
+```{r}
+map.atten.world <- map.feature(languages = world$language,
+                 features = world$has.attenuative,
+                 color= "YlOrRd")
+map.atten.world
+```
+The distribution of attenuatives worldwide. Dark circles stand for the languages, where attenuative markers were attested, lighter circles mark languages, where such markers are absent. At first glance, these markers are more widespread than affixal verbs.
+### 1.4. Resulting samples
+
+```{r}
+summary(sib)
+```
+**Sample 1: Siberia**
+- language: language name as in Glottolog
+- family
+- branch
+- coordinates
+- glottocode
+- is.siberian: 0 or 1; принадлежность к интересующему нас ареалу
+- affixal.verbs: categorical, amount of lexical affixes attested in a language. single(1) vs. low(2-3) vs. medium(4-6) vs. high(7+)
+- make, use, exist, have, spurious, act.like: different types of plain denominal verbaizers (numer in a column = number of such verbaizers in a language)
+- ingest, get.in.nature, smell, spend.season, play, go.to, other: different types of affixal verbs (also known as lexical affixes); numer in a column = number of such verbaizers in a language
+- total.lexical: total N of affixal verbs in a language
+- has_attenuative: 0 or 1 if attenuative derivations were attested in a language
+
+
+To begin with, consider simple tables of distribution of affixal verbs inside and outside the siberian areal:
+```{r}
+ftable(xtabs(~ is.siberian + affixal.verbs, data = sib))
+```
+```{r}
+av.b1 <- as.data.frame(ftable(xtabs(~ is.siberian + affixal.verbs, data = sib)))
+av.b1
+ggplot(av.b1, 
+       aes(x=affixal.verbs, y=Freq, fill=is.siberian)) +
+  geom_bar(stat="identity", position="dodge") + 
+  theme(axis.text.x = element_text(size=15),
+        text = element_text(size=15)) +
+  scale_x_discrete(labels=c("no", "single", "low", "medium", "high")) + 
+  labs(y = "n") + 
+  labs(x = "") + 
+  theme(axis.title = element_text()) + 
+  ggtitle("Affixal verbs inventories inside and outside the siberian areal") + 
+  scale_fill_discrete(name = "is siberian?")
+```
+
+
+cf. genealogical distribution
+```{r}
+ftable(xtabs(~ family + affixal.verbs, data = sib))
+```
+ Same for attenuative markers, inside and outside the siberian areal:
+```{r}
+ftable(xtabs(~ is.siberian + has_attenuative, data = sib))
+```
+```{r}
+at.b1 <- as.data.frame(ftable(xtabs(~ is.siberian + has_attenuative, data = sib)))
+at.b1
+ggplot(at.b1, 
+       aes(x=has_attenuative, y=Freq, fill=is.siberian)) +
+  geom_bar(stat="identity", position="dodge") + 
+  theme(axis.text.x = element_text(size=15),
+        text = element_text(size=15)) +
+  scale_x_discrete(labels=c("not attested", "attested")) + 
+  labs(y = "n") + 
+  labs(x = "") + 
+  theme(axis.title = element_text()) + 
+  ggtitle("Attenuatives inside and outside the siberian areal") + 
+  scale_fill_discrete(name = "is siberian?")
+```
+
+cf. genealogical
+```{r}
+ftable(xtabs(~ family + has_attenuative, data = sib))
+```
+
+
+
+
+
+
+
+
+```{r}
+summary(world)
+```
+
+**Sample 2: World**
+- language: language name as in Glottolog
+- family
+- branch
+- coordinates
+- glottocode
+- is.siberian: 0 or 1; принадлежность к интересующему нас ареалу
+- affixal.verbs: categorical, amount of lexical affixes attested in a language. single(1) vs. low(2-3) vs. medium(4-6) vs. high(7+)
+- has.attenuative: 0 or 1
+
+```{r}
+ftable(xtabs(~ is.siberian + has.attenuative, data = world))
+```
+
+
+
+
+```{r}
+ftable(xtabs(~ is.siberian + affixal.verbs, data = world))
+```
+```{r}
+
+```
+
+
+## 1.5. Basic statistics
+
+Consider chi-square test statistics for attenuative markers
+
+```{r}
+chisq.test(ftable(xtabs(~ is.siberian + has_attenuative, data = sib)))
+chisq.test(ftable(xtabs(~ is.siberian + has.attenuative, data = world)))
+```
+we can reject H0 only for the world sample
+
+```{r}
+av.3 <- as.data.frame(ftable(xtabs(~ is.siberian + affixal.verbs, data = world)))
+av.3 %>% 
+  pivot_wider(names_from = affixal.verbs, values_from = Freq, values_fn = sum) %>% 
+  mutate(attested = single + low + medium + high) %>% 
+  dplyr::select(no, attested) %>% 
+  chisq.test()
+```
+p-value = 0.009598 => we can reject H0
+
+
+Bar-plots of the distribution of affixal verbs: inside vs. outside the areal for different families. From the first glance, it seems that inside siberian areal (is.siberian=1) there are mode languages with larger affixal verbs inventory, than outside, but the further investigation is needed.
+```{r}
+ggplot(sib, aes(x=family, fill=affixal.verbs)) +
+  geom_bar(position = "dodge")+
+  facet_grid(.~is.siberian) +
+  theme_classic() +
+  theme(text = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "",
+       y = "")
+```
+
+Bar-plots of the distribution of attenuatives: inside vs. outside the areal for different families. At this point, it is quite hard to claim anything... But looks like there are a little bit more languages with attenuative inside siberia (is.siberian=1), than outside.
+
+```{r}
+ggplot(sib, aes(x=family, fill=as.factor(has_attenuative))) +
+  geom_bar(position = "dodge")+
+  facet_grid(.~is.siberian) +
+  theme_classic() +
+  theme(text = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "",
+       y = "")
+```
+
+
+
+## 2. Clustering
+
+Let's see how languages can cluster, based on what features they have.
+We will start by taking into account only affixal verbs (ingest, get.in.nature, smell, spend.season, play, go.to, other) and attenuatives (has_attenuative)
+
+```{r}
+sib %>% 
+  dplyr::select(language, ingest, get.in.nature, smell, spend.season, play, go.to, other, has_attenuative) %>% 
+  drop_na(has_attenuative) -> sib.cl
+sib.cl <- as.data.frame(sib.cl)
+rownames(sib.cl) <- sib.cl$language
+sib.cl <- sib.cl[,-1]
+```
+
+First, we need to estimate, what number of clusters will be optimal:
+```{r}
+fviz_nbclust(sib.cl, kmeans, method = "wss")
+fviz_nbclust(sib.cl, kmeans, method = "silhouette")
+```
+2 clusters seem to be optimal, but we will also look at kmeans with 3 clusters
+
+```{r}
+means.2 <- kmeans(sib.cl, 2)
+fviz_cluster(means.2, data = sib.cl)
+
+means.3 <- kmeans(sib.cl, 3)
+fviz_cluster(means.3, data = sib.cl)
+```
+```{r}
+sib.clus <- as.data.frame(means.2["cluster"])
+m.cl <- map.feature(languages = rownames(sib.clus),
+                 features = sib.clus$cluster,
+                 color = "Set1")
+m.cl
+```
+
+
+
+```{r}
+hc <- hclust(dist(sib.cl), "ward.D")
+#plot(hc)
+#plot(hc, hang = -1)
+colors = c("red", "blue", "black")
+clus2 = cutree(hc, 2)
+clus3 = cutree(hc, 3)
+plot(as.phylo(hc), type = "fan", tip.color = colors[clus3],
+     label.offset = 1.5, cex = 0.5)
+plot(as.phylo(hc), type = "fan", tip.color = colors[clus2],
+     label.offset = 1.5, cex = 0.5)
+```
+На всякий случай нарисуем 3 кластера тоже, чтобы ничего не упустить
+
+```{r}
+sib.clus <- as.data.frame(clus2)
+m.cl <- map.feature(languages = rownames(sib.clus),
+                 features = sib.clus$clus2,
+                 color = "Set1")
+m.cl
+```
+
+
+```{r}
+sib.clus <- as.data.frame(clus3)
+m.cl <- map.feature(languages = rownames(sib.clus),
+                 features = sib.clus$clus3,
+                 color = "Set1")
+m.cl
+```
+
+cf. genealogical distribution
+
+```{r}
+m.gen <- map.feature(languages = sib$language,
+                 features = sib$family,
+                 color = "Set1")
+m.gen
+```
+
+Выделяется уральская семья (оба типа показателей есть во многих языках) и тюркская (наоборот, ничего нет). На востоке больше генеалогическое разнообразие, но при этом они объединяются в один кластер (при n.clusters=3) независимо от этого.
+
+## 2.1 Clustering: further investigation
+
+```{r}
+library(geohashTools)
+library(ggcorrplot)
+```
+
+
+```{r}
+sib$geohash <- gh_encode(sib$latitude, sib$longitude, precision = 1L)
+```
+
+
+```{r}
+sib.clus.df <- cbind(language = rownames(as.data.frame(sib.clus)), as.data.frame(sib.clus))
+rownames(sib.clus.df) <- 1:nrow(sib.clus.df)
+sib.2 <- merge(x = sib, y = sib.clus.df, by = "language", all.x = TRUE, suffixes = c("",".y"), no.dups = TRUE)
+```
+
+
+using model.matrix to one-hot encode all non-numeric variables, then look at correlation
+```{r}
+sib.2 %>%
+  dplyr::select(clus3, is.siberian, family) -> test
+
+model.matrix(~0+., data=test) %>% 
+  cor(use="pairwise.complete.obs") %>% 
+  ggcorrplot(show.diag=FALSE, type="lower", lab=TRUE, lab_size=2)
+```
+the highest correlation is between cluster number and Eskaleut and Turkic families, but cluster and is.siberian variable are also slightly correlated
+
+
+```{r}
+#ggplot(sib.2, aes(geohash=geohash))+stat_geohash()
+#ggplot(sib.2, aes(geohash=geohash))+geom_rect(stat="geohash") +coord_quickmap()
+```
+
+Now I replace languages' coordinates with geohash tags and check, whether there will be correlation between languages geographical distribution and cluster they were assigned by hclust
+
+```{r}
+sib.2 %>%
+  dplyr::select(clus3, geohash) -> test
+
+model.matrix(~0+., data=test) %>% 
+  cor(use="pairwise.complete.obs") %>% 
+  ggcorrplot(show.diag=FALSE, type="lower", lab=TRUE, lab_size=1)
+```
+
+There is some slight correlations between geohash tags and cluster nubmers
+
+
+
+## 3. Regression analysis
+
+## 3.1. Можем ли мы по набору черт в языке предсказать принадлежность к ареалу?
+```
+
+H0: По наличию в языке аффиксальных глаголов (или некоторых их подтипов) и/или аттенуативов можно предсказать, что язык находится внутри сибирского ареала
+H1: По наличию в языке аффиксальных глаголов (или некоторых их подтипов) и/или аттенуативов нельзя предсказать, что язык находится внутри сибирского ареала
+```
+
+```{r}
+reg_sib <- glm(is.siberian ~ affixal.verbs + has_attenuative, data = sib)
+summary(reg_sib)
+```
+replicate the model, excluding unimportant variable:
+
+```{r}
+
+reg_sib <- glm(is.siberian ~ affixal.verbs, data = sib)
+summary(reg_sib)
+```
+We cannot reject the H0
+
+
+## 3.2. areality vs. genealogical 
+А если  наоборот?.. Что больше определяет наличие аттенуатива / аффиксальных глаголов в языке -- ареал или генеалогия?
+
+Attenuatives:
+
+```
+
+H0: Принадлежность языка к семье и / или принадлежность к ареалу не влияет на наличие в языке аттенуатива
+H1: Принадлежность языка к семье и / или принадлежность к ареалу влияет на наличие в языке аттенуатива
+
+```
+
+```{r}
+reg_sib <- glm(has_attenuative ~ is.siberian + family, family = binomial, data = sib)
+summary(reg_sib)
+```
+
+Another logit, but including family as random effect 
+
+```{r}
+m <- glmer(has_attenuative ~ is.siberian + (1 | family), data = sib, family = binomial, control = glmerControl(optimizer = "bobyqa"),
+    nAGQ = 10)
+
+summary(m)
+```
+We cannot reject H0
+
+Affixal verbs:
+Since we are dealing with ordered categorical target variable, I will apply cumulative link model. I will also try to include family as random effect
+```
+
+H0: Принадлежность языка к семье и / или принадлежность к ареалу не влияет на наличие в языке аффиксальных глаголов (или некоторых их подтипов)
+H1: Принадлежность языка к семье и / или принадлежность к ареалу влияет на наличие в языке аффиксальных глаголов (или некоторых их подтипов)
+
+```
+
+```{r}
+sib_clmm <- clmm(affixal.verbs ~ is.siberian + (1|family), data = sib)	
+summary(sib_clmm)
+```
+likelihood ratio tests for model comparison via anova: interpreting effect of adding random effects to ordinal regression
+
+```{r}
+sib_clm <- clm(affixal.verbs ~ is.siberian, data = sib)	
+anova(sib_clm, sib_clmm)
+```
+Thus, we can conclude, that both fixed and random effects are significant (p-value < 0.01 for fixed, nearly zero for random effect), and we can reject the H0. Both family and areal are important.
+
+
+
+## 4.ANOVA
+
+```{r}
+library(bayesanova)
+library(ggpubr)
+```
+
+Рассмотрим выборку world как репрезентацию general preference языков иметь или не иметь аттенуативы и аффиксальные глаголы; из нее возьмем ~априорные вероятности и сравним с языками в сибири
+
+```
+(1)
+H0: Вероятность наличия аффиксальных глаголов (или некоторых их подтипов) в языке в сибири не отличается от вероятности для языков мира в целом
+H1: Вероятность наличия аффиксальных глаголов (или некоторых их подтипов) в языке в сибири отличается от вероятности для языков мира в целом
+
+(2)
+H0: Вероятность наличия аттенуатива в языке в сибири не отличается от вероятности для языков мира в целом
+H1: Вероятность наличия аттенуатива в языке в сибири отличается от вероятности для языков мира в целом
+
+```
+attenuative probabilities 
+```{r}
+world %>%
+  drop_na() %>% 
+  dplyr::select(has.attenuative) %>% 
+  count(has.attenuative) %>% 
+  summarise(ratio = n[has.attenuative == "1"] / (n[has.attenuative == "1"] + n[has.attenuative == "0"]))
+
+
+sib %>%
+  drop_na() %>% 
+  dplyr::select(has_attenuative) %>% 
+  count(has_attenuative) %>% 
+  summarise(ratio = n[has_attenuative == "1"] / (n[has_attenuative == "1"] + n[has_attenuative == "0"]))
+  
+```
+
+```{r}
+world %>%
+  drop_na() %>% 
+  dplyr::select(affixal.verbs) %>% 
+  count(affixal.verbs)
+```
+ANOVA
+
+```{r}
+w_vec <-world$has.attenuative
+w_vec <- w_vec[!is.na(w_vec)]
+s_vec <- sib[sib$is.siberian == 1,"has_attenuative"]
+s_vec <- s_vec[!is.na(s_vec)]
+df_aov <- data.frame(
+       atten=c(w_vec, s_vec),
+       sample =factor(rep(c("world", "sib"), times=c(length(w_vec), length(s_vec))))
+       )
+```
+
+
+```{r}
+ggdensity(w_vec, 
+          main = "Density plot",
+          xlab = "Attenuative worldwide")
+ggqqplot(w_vec)
+
+ggdensity(s_vec, 
+          main = "Density plot",
+          xlab = "Attenuative in Siberia")
+ggqqplot(s_vec)
+```
+The data isn't normally distributed
+
+```{r}
+anova.res <- aov(atten~sample, data=df_aov)
+summary(anova.res)
+```
+for affixal verbs I will run ANOVA on total counts of affixal verbs in languages (total.lexical -- N of lexical verbs in a language)
+```{r}
+w_vec <-world$total.lexical
+w_vec <- w_vec[!is.na(w_vec)]
+s_vec <- sib[sib$is.siberian == 1,"total.lexical"]
+s_vec <- s_vec[!is.na(s_vec)]
+
+```
+
+```{r}
+ggdensity(w_vec, 
+          main = "Density plot",
+          xlab = "Affixal verbs worldwide")
+ggqqplot(w_vec)
+
+ggdensity(s_vec, 
+          main = "Density plot",
+          xlab = "Affixal verbs in Siberia")
+ggqqplot(s_vec)
+```
+The data isn't normally distributed
+
+
+
+```{r}
+df_aov <- data.frame(
+       atten=c(w_vec, s_vec),
+       sample =factor(rep(c("world", "sib"), times=c(length(w_vec), length(s_vec))))
+       )
+anova.res <- aov(atten~sample, data=df_aov)
+summary(anova.res)
+```
+
+p-value for attenuative: 5.06e-07 *** (significant)
+p-value for affixal verbs: 0.00268 (significant)
+Anova shows high significace, but since the data isn't reaaly normally distributed we cannot rely on these results.
+## 5. Conclusion & Discussion
+
+### 5.1. Summary
+
+* Turkic and Mongolic languages tend to cluster apart from all the rest -- which is not surprising, since both attenuatives and lexical affixes are rarely attested among languages of this families
+* Orientation towards North-Eastern part -- despite higher genealogical diversity (consider Eskaleut, Ch-K, Tungusic languages clustered together)
+* For attenuatives it is rather hard to claim any areal bias. Regression analysis shows that we cannot reject the H0, even though ANOVA implies some slight areal tendencies.
+* As for affixal verbs, the tendency for them to occur in North-Eastern Siberia can be established. These ‘lexically-heavy’ bound morphemes are rare cross-linguistically and are mostly described for North American Indigenious languages (see Mithun 1997). If the presence of affixal verbs in North-Eastern part of Siberia is not an improbable accident, the genealogical unrelatedness of linguistic stocks which exhibit it can point to the ancient contact scenarious, possibly influenced by an unknown (but, perhaps, Inuit-Yupik-looking like) substrate, see Gusev (2020) for similar hypotheses on the basis of different data.
+
+```{r}
+#clusters mapping
+m.cl
+```
+
+
+
+### 5.2. Contact assumptions
+
+* Chukotian and Eskimo - long-standing contact
+* (Northern) Tungusic - contact along Okhotsk sea with (old) Koryakic
+* Samoyedic??? - proto-Tungusic-Samoyedic convergence
+* Assumption - Eskaleut-like substrate along Northern Eurasia (see Gusev 2021)
+* Hunter-gatherers living in South-Eastern Siberia and along Okhotsk sea (‘Tokarevo culture’?)
+* Mutual bilingualism or substrate absorption for (Northern) Tungusic and (Northern) Samoyedic?
+* Retention through contact (Northern Samoyedic-Northern Tungusic-Chukotian-Eskimo) and further grammaticalization outside it
+* Complexification through isolation (Trudgill 2011)??
+
+
